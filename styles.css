@@ -1,0 +1,81 @@
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    z-index: 1000;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar li {
+    margin: 10px 0;
+}
+
+.sidebar a {
+    color: white;
+    text-decoration: none;
+    padding: 1rem;
+    display: block;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background 0.3s ease;
+}
+
+.sidebar a:hover {
+    background: var(--secondary-color);
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    display: none; /* Hidden by default */
+    padding-left: 20px;
+    list-style: none;
+}
+
+.dropdown-menu li a {
+    padding: 0.8rem;
+    font-size: 0.9em;
+    background: var(--neutral-color);
+    color: var(--primary-color);
+    margin: 2px 0;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+}
+
+.dropdown-menu li a:hover {
+    background: var(--accent-color);
+    color: white;
+}
+
+/* Show dropdown menu when parent has 'active' class */
+.dropdown.active .dropdown-menu {
+    display: block;
+}
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar {
+        width: 150px;
+    }
+
+    .dropdown-menu li a {
+        font-size: 0.8em;
+        padding: 0.6rem;
+    }
+}

@@ -1,0 +1,70 @@
+<?php
+session_start();
+
+// Path to XML file
+$xmlFile = 'inventory.xml';
+
+// Load XML file or create a new one if it doesn't exist
+if (!file_exists($xmlFile)) {
+    $xml = new SimpleXMLElement('<inventory></inventory>');
+    $xml->asXML($xmlFile);
+}
+
+// Function to add an item to the inventory XML
+function addInventoryItem($name, $quantity, $description) {
+    global $xmlFile;
+    
+    $xml = simplexml_load_file($xmlFile);
+    $item = $xml->addChild('item');
+    $item->addChild('name', htmlspecialchars($name));
+    $item->addChild('quantity', htmlspecialchars($quantity));
+    $item->addChild('description', htmlspecialchars($description));
+    
+    $xml->asXML($xmlFile);
+}
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name = $_POST['name'] ?? '';
+    $quantity = $_POST['quantity'] ?? '';
+    $description = $_POST['description'] ?? '';
+    
+    if (!empty($name) && !empty($quantity)) {
+        addInventoryItem($name, $quantity, $description);
+        $_SESSION['message'] = 'Inventory item added successfully!';
+    } else {
+        $_SESSION['message'] = 'Please fill in all required fields.';
+    }
+    
+    header('Location: addinventory.php');
+    exit();
+}
+
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Inventory</title>
+</head>
+<body>
+    <h2>Add New Inventory Item</h2>
+    <?php if (isset($_SESSION['message'])): ?>
+        <p><?php echo $_SESSION['message']; unset($_SESSION['message']); ?></p>
+    <?php endif; ?>
+    
+    <form method="post" action="">
+        <label for="name">Item Name:</label>
+        <input type="text" name="name" required><br>
+        
+        <label for="quantity">Quantity:</label>
+        <input type="number" name="quantity" required><br>
+        
+        <label for="description">Description:</label>
+        <textarea name="description"></textarea><br>
+        
+        <button type="submit">Add Item</button>
+    </form>
+</body>
+</html>

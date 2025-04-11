@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNMEB Inventory Management</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>UNMEB</h2>
+            <ul>
+                <li><a href="index.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="inventory.php"><i class="fas fa-boxes"></i> Inventory</a></li>
+                <li><a href="requests.php"><i class="fas fa-file-alt"></i> Requests</a></li>
+                <li><a href="reports.php"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="users.php"><i class="fas fa-users"></i> Users</a></li>
+                <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Dashboard</h1>
+            <div class="charts">
+                <canvas id="inventoryPieChart"></canvas>
+                <canvas id="inventoryBarChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Pie Chart
+        const pieCtx = document.getElementById('inventoryPieChart').getContext('2d');
+        const pieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Exams', 'Supplies', 'Equipment'],
+                datasets: [{
+                    data: [30, 45, 25],
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                }]
+            }
+        });
+
+        // Bar Chart
+        const barCtx = document.getElementById('inventoryBarChart').getContext('2d');
+        const barChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['January', 'February', 'March', 'April'],
+                datasets: [{
+                    label: 'Stock Levels',
+                    data: [12, 19, 3, 5],
+                    backgroundColor: '#36A2EB'
+                }]
+            }
+        });
+    </script>
+</body>
+</html>

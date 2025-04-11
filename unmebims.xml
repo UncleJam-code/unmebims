@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<UNMEBIMS>
+    <Pages>
+        <Page id="dashboard">
+            <Title>Dashboard</Title>
+        </Page>
+        <Page id="inventory">
+            <Title>View Inventory</Title>
+        </Page>
+        <Page id="addItem">
+            <Title>Add New Item</Title>
+        </Page>
+        <Page id="requests">
+            <Title>Requests</Title>
+        </Page>
+        <Page id="reports">
+            <Title>Reports</Title>
+        </Page>
+        <Page id="auditLogs">
+            <Title>Audit Logs</Title>
+        </Page>
+        <Page id="users">
+            <Title>Users</Title>
+        </Page>
+    </Pages>
+    <Sidebar>
+        <Menu>
+            <!-- Top-Level Menu Items -->
+            <MenuItem>
+                <Link href="adminindex.html">
+                    <Icon class="fas fa-home"></Icon>
+                    <Text>Dashboard</Text>
+                </Link>
+            </MenuItem>
+
+            <!-- Dropdown Menus -->
+            <Dropdown label="Inventory">
+                <SubmenuItem href="inventory.php">View Inventory</SubmenuItem>
+                <SubmenuItem href="add_item.php">Add New Item</SubmenuItem>
+            </Dropdown>
+            <Dropdown label="Requests">
+                <SubmenuItem href="request_item.php">Request Item</SubmenuItem>
+                <SubmenuItem href="approve_request.php">Approve/Reject Requests</SubmenuItem>
+            </Dropdown>
+            <Dropdown label="Reports">
+                <SubmenuItem href="generate_report.php">Generate Reports</SubmenuItem>
+            </Dropdown>
+            <Dropdown label="Audit">
+                <SubmenuItem href="audit_logs.php">Audit Logs</SubmenuItem>
+            </Dropdown>
+            <Dropdown label="Users">
+                <SubmenuItem href="add_user.php">Add User</SubmenuItem>
+                <SubmenuItem href="manage_users.php">Manage Users</SubmenuItem>
+            </Dropdown>
+        </Menu>
+    </Sidebar>
+</UNMEBIMS>

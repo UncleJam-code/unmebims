@@ -1,0 +1,127 @@
+<?php
+session_start();
+// For simplicity, no login check is implemented here. In a full system, add authentication.
+
+$xmlFile = 'inventory.xml';
+
+// If the XML file does not exist, create one with the root element.
+if (!file_exists($xmlFile)) {
+    $xml = new SimpleXMLElement('<inventory></inventory>');
+    $xml->asXML($xmlFile);
+}
+
+// Load the XML file
+$xml = simplexml_load_file($xmlFile);
+
+// Initialize variables
+$mode = ''; // add, edit, or view
+$item_id = null;
+$item_name = "";
+$quantity = "";
+$category = "";
+$location = "";
+$status = "";
+$barcode = "";
+$message = "";
+$error = "";
+$search = isset($_GET['search']) ? trim($_GET['search']) : "";
+
+// Helper function: Save XML
+function saveXML($xmlFile, $xmlObject) {
+    $xmlObject->asXML($xmlFile);
+}
+
+// Helper function: Generate new item ID (max + 1)
+function generateNewId($xml) {
+    $max = 0;
+    foreach ($xml->item as $item) {
+        $id = (int)$item->id;
+        if ($id > $max) {
+            $max = $id;
+        }
+    }
+    return $max + 1;
+}
+
+// Handle deletion (if GET 'delete' is set)
+if (isset($_GET['delete']) && filter_var($_GET['delete'], FILTER_VALIDATE_INT)) {
+    $deleteId = intval($_GET['delete']);
+    $found = false;
+    foreach ($xml->item as $index => $item) {
+        if ((int)$item->id === $deleteId) {
+            unset($xml->item[$index]);
+            $found = true;
+            $message = "Item deleted successfully.";
+            break;
+        }
+    }
+    if ($found) {
+        saveXML($xmlFile, $xml);
+        header("Location: inventory.php?message=" . urlencode($message));
+        exit();
+    } else {
+        $error = "Item not found.";
+    }
+}
+
+// Determine mode: add or edit (via GET parameter)
+if (isset($_GET['add']) && $_GET['add'] == 'true') {
+    $mode = 'add';
+} elseif (isset($_GET['edit']) && filter_var($_GET['edit'], FILTER_VALIDATE_INT)) {
+    $mode = 'edit';
+    $item_id = intval($_GET['edit']);
+    // Find the item in XML
+    $found = false;
+    foreach ($xml->item as $item) {
+        if ((int)$item->id === $item_id) {
+            $item_name = (string)$item->item_name;
+            $quantity = (string)$item->quantity;
+            $category = (string)$item->category;
+            $location = (string)$item->location;
+            $status = (string)$item->status;
+            $barcode = (string)$item->barcode;
+            $found = true;
+            break;
+        }
+    }
+    if (!$found) {
+        $error = "Item not found.";
+        $mode = 'view';
+    }
+}
+
+// Handle form submission for adding/editing items
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get form fields
+    $item_name = trim($_POST['item_name']);
+    $quantity = trim($_POST['quantity']);
+    $category = trim($_POST['category']);
+    $location = trim($_POST['location']);
+    $status = trim($_POST['status']);
+    $barcode = trim($_POST['barcode']);
+    
+    if (empty($item_name) || empty($quantity) || empty($category) || empty($location) || empty($status) || empty($barcode)) {
+        $error = "All fields are required.";
+    } elseif (!is_numeric($quantity) || $quantity < 0) {
+        $error = "Quantity must be a non-negative number.";
+    } else {
+        if ($mode == 'edit' && isset($_POST['item_id'])) {
+            // Update existing item
+            $item_id = intval($_POST['item_id']);
+            $found = false;
+            foreach ($xml->item as $item) {
+                if ((int)$item->id === $item_id) {
+                    $item->item_name = htmlspecialchars($item_name);
+                    $item->quantity = htmlspecialchars($quantity);
+                    $item->category = htmlspecialchars($category);
+                    $item->location = htmlspecialchars($location);
+                    $item->status = htmlspecialchars($status);
+                    $item->barcode = htmlspecialchars($barcode);
+                    $found = true;
+                    break;
+                }
+            }
+            if ($found) {
+                saveXML($xmlFile, $xml);
+                $message = "Item updated successfully.";
+            } else {\n                $error = \"Item not found.\";\n            }\n        } else {\n            // Add new item\n            $newId = generateNewId($xml);\n            $newItem = $xml->addChild('item');\n            $newItem->addChild('id', $newId);\n            $newItem->addChild('item_name', htmlspecialchars($item_name));\n            $newItem->addChild('quantity', htmlspecialchars($quantity));\n            $newItem->addChild('category', htmlspecialchars($category));\n            $newItem->addChild('location', htmlspecialchars($location));\n            $newItem->addChild('status', htmlspecialchars($status));\n            $newItem->addChild('barcode', htmlspecialchars($barcode));\n            saveXML($xmlFile, $xml);\n            $message = \"Item added successfully.\";\n        }\n        header(\"Location: inventory.php?message=\" . urlencode($message));\n        exit();\n    }\n}\n\n// For search: filter items if search term provided\n$items = [];\nforeach ($xml->item as $item) {\n    $match = true;\n    if (!empty($search)) {\n        $match = (stripos($item->item_name, $search) !== false ||\n                  stripos($item->category, $search) !== false ||\n                  stripos($item->location, $search) !== false);\n    }\n    if ($match) {\n        $items[] = $item;\n    }\n}\n\n// Capture messages from query string\nif (isset($_GET['message'])) {\n    $message = htmlspecialchars($_GET['message']);\n}\n?>\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Inventory Management</title>\n    <link rel=\"stylesheet\" href=\"styles.css\">\n    <link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css\">\n    <style>\n        /* Basic Reset */\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; line-height: 1.6; }\n        /* Sidebar (if used, you can also separate this into an include file) */\n        .sidebar { position: fixed; left: 0; top: 0; width: 250px; height: 100vh; background: #2c3e50; color: white; padding: 1rem; }\n        .sidebar h2 { text-align: center; margin-bottom: 1.5rem; }\n        .sidebar ul { list-style: none; }\n        .sidebar li { margin: 10px 0; }\n        .sidebar a { color: white; text-decoration: none; padding: 0.8rem; display: block; border-radius: 8px; transition: background 0.3s ease; }\n        .sidebar a:hover { background: #34495e; }\n        /* Main Content */\n        .main-content { margin-left: 250px; padding: 2rem; }\n        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }\n        h2 { color: #2c3e50; margin-bottom: 1.5rem; text-align: center; }\n        /* Form Styles */\n        form { max-width: 500px; margin: 0 auto; padding: 2rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }\n        .form-group { margin-bottom: 1rem; }\n        label { display: block; font-weight: bold; margin-bottom: 0.5rem; }\n        input, select, textarea { width: 100%; padding: 0.8rem; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 1rem; }\n        .btn-container { display: flex; gap: 1rem; justify-content: center; }\n        button { padding: 0.8rem 1.5rem; background: #3498db; color: #fff; border: none; border-radius: 4px; cursor: pointer; }\n        button:hover { background: #2980b9; }\n        .add-button { display: inline-block; background: #27ae60; color: white; padding: 0.8rem 1.5rem; border-radius: 4px; text-decoration: none; margin: 1rem auto; text-align: center; }\n        /* Table Styles */\n        .inventory-table { width: 100%; border-collapse: collapse; margin-top: 2rem; }\n        .inventory-table th, .inventory-table td { border: 1px solid #ddd; padding: 0.8rem; text-align: left; }\n        .inventory-table th { background: #2c3e50; color: white; }\n        .inventory-table tr:nth-child(even) { background: #f9f9f9; }\n        .inventory-table tr:hover { background: #f1f1f1; }\n        .action-link { color: #3498db; text-decoration: none; }\n        .action-link:hover { text-decoration: underline; }\n        /* Search Bar */\n        .search-bar { margin-bottom: 1.5rem; text-align: center; }\n        .search-container { display: flex; max-width: 800px; margin: 0 auto; position: relative; border: 1px solid #3498db; border-radius: 25px; overflow: hidden; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }\n        .search-input { flex-grow: 1; padding: 0.8rem 1rem; border: none; outline: none; font-size: 1rem; background: transparent; color: #2c3e50; }\n        .search-input::placeholder { color: #ccc; opacity: 0.7; }\n        .search-button { padding: 0.8rem 1rem; background: #3498db; color: white; border: none; cursor: pointer; font-size: 1rem; transition: background 0.3s ease; }\n        .search-button:hover { background: #2980b9; }\n    </style>\n</head>\n<body>\n    <!-- Optionally include a sidebar file if you modularize your code -->\n    <div class=\"sidebar\">\n        <h2>UNMEB</h2>\n        <ul>\n            <li><a href=\"index.php\"><i class=\"fas fa-home\"></i> Dashboard</a></li>\n            <li class=\"dropdown\">\n                <a href=\"#\" class=\"dropdown-toggle\"><i class=\"fas fa-boxes\"></i> Inventory <i class=\"fas fa-caret-down\"></i></a>\n                <ul class=\"dropdown-menu\">\n                    <li><a href=\"inventory.php\">View Inventory</a></li>\n                    <li><a href=\"inventory.php?add=true\">Add New Item</a></li>\n                </ul>\n            </li>\n            <li class=\"dropdown\">\n                <a href=\"#\" class=\"dropdown-toggle\"><i class=\"fas fa-file-alt\"></i> Requests <i class=\"fas fa-caret-down\"></i></a>\n                <ul class=\"dropdown-menu\">\n                    <li><a href=\"request.php\">Manage Exam Materials</a></li>\n                    <li><a href=\"storesupplies.php\">Store Supplies</a></li>\n                    <li><a href=\"trackequipment.php\">Track Equipment</a></li>\n                </ul>\n            </li>\n            <li class=\"dropdown\">\n                <a href=\"#\" class=\"dropdown-toggle\"><i class=\"fas fa-chart-bar\"></i> Reports <i class=\"fas fa-caret-down\"></i></a>\n                <ul class=\"dropdown-menu\">\n                    <li><a href=\"report.php\">Inventory Reports</a></li>\n                    <li><a href=\"audit_logs.php\">Audit Logs</a></li>\n                </ul>\n            </li>\n            <li class=\"dropdown\">\n                <a href=\"#\" class=\"dropdown-toggle\"><i class=\"fas fa-users\"></i> Users <i class=\"fas fa-caret-down\"></i></a>\n                <ul class=\"dropdown-menu\">\n                    <li><a href=\"addusers.php\">Add New User</a></li>\n                    <li><a href=\"manageuser.php\">Edit User Information</a></li>\n                </ul>\n            </li>\n            <li><a href=\"logout.php\"><i class=\"fas fa-sign-out-alt\"></i> Logout</a></li>\n        </ul>\n    </div>\n\n    <div class=\"main-content\">\n        <div class=\"container\">\n            <?php\n            // Display add/edit form if in add or edit mode\n            if ((isset($_GET['add']) && $_GET['add'] == 'true') || (isset($_GET['edit']) && filter_var($_GET['edit'], FILTER_VALIDATE_INT))) {\n                // Determine if editing\n                $edit_mode = false;\n                if (isset($_GET['edit'])) {\n                    $edit_mode = true;\n                    $item_id = intval($_GET['edit']);\n                    // Search for the item in the XML\n                    $found = false;\n                    foreach ($xml->item as $item) {\n                        if ((int)$item->id === $item_id) {\n                            $item_name = (string)$item->item_name;\n                            $quantity = (string)$item->quantity;\n                            $category = (string)$item->category;\n                            $location = (string)$item->location;\n                            $status = (string)$item->status;\n                            $barcode = (string)$item->barcode;\n                            $found = true;\n                            break;\n                        }\n                    }\n                    if (!$found) {\n                        echo \"<p>Item not found.</p>\";\n                        exit();\n                    }\n                } else {\n                    // Defaults for adding a new item\n                    $item_name = $quantity = $category = $location = $status = $barcode = \"\";\n                }\n                ?>\n                <h2><?= $edit_mode ? \"Edit Inventory Item\" : \"Add New Inventory Item\" ?></h2>\n                <form method=\"POST\" action=\"\">\n                    <?php if ($edit_mode): ?>\n                        <input type=\"hidden\" name=\"item_id\" value=\"<?= $item_id ?>\">\n                    <?php endif; ?>\n                    <div class=\"form-group\">\n                        <label for=\"item_name\">Item Name:</label>\n                        <input type=\"text\" id=\"item_name\" name=\"item_name\" value=\"<?= htmlspecialchars($item_name) ?>\" required>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"quantity\">Quantity:</label>\n                        <input type=\"number\" id=\"quantity\" name=\"quantity\" value=\"<?= htmlspecialchars($quantity) ?>\" min=\"0\" required>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"category\">Category:</label>\n                        <input type=\"text\" id=\"category\" name=\"category\" value=\"<?= htmlspecialchars($category) ?>\" required>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"location\">Location:</label>\n                        <input type=\"text\" id=\"location\" name=\"location\" value=\"<?= htmlspecialchars($location) ?>\" required>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"status\">Status:</label>\n                        <select id=\"status\" name=\"status\" required>\n                            <option value=\"Available\" <?= $status == 'Available' ? 'selected' : '' ?>>Available</option>\n                            <option value=\"Out of Stock\" <?= $status == 'Out of Stock' ? 'selected' : '' ?>>Out of Stock</option>\n                        </select>\n                    </div>\n                    <div class=\"form-group\">\n                        <label for=\"barcode\">Barcode:</label>\n                        <input type=\"text\" id=\"barcode\" name=\"barcode\" value=\"<?= htmlspecialchars($barcode) ?>\" required>\n                    </div>\n                    <div class=\"btn-container\">\n                        <button type=\"submit\"><?= $edit_mode ? \"Update Item\" : \"Add Item\" ?></button>\n                        <a href=\"inventory.php\"><button type=\"button\">Cancel</button></a>\n                    </div>\n                </form>\n                <?php\n            } else {\n                // View mode: list items with optional search\n                ?>\n                <h2>Inventory Management</h2>\n                <!-- Search Bar -->\n                <div class=\"search-bar\">\n                    <form method=\"GET\" action=\"\">\n                        <div class=\"search-container\">\n                            <input type=\"text\" name=\"search\" placeholder=\"Search by name, category, or location...\" value=\"<?= htmlspecialchars($search) ?>\" class=\"search-input\">\n                            <button type=\"submit\" class=\"search-button\"><i class=\"fas fa-search\"></i></button>\n                        </div>\n                    </form>\n                </div>\n                <table class=\"inventory-table\">\n                    <thead>\n                        <tr>\n                            <th>ID</th>\n                            <th>Item Name</th>\n                            <th>Quantity</th>\n                            <th>Category</th>\n                            <th>Location</th>\n                            <th>Status</th>\n                            <th>Barcode</th>\n                            <th>Actions</th>\n                        </tr>\n                    </thead>\n                    <tbody>\n                        <?php if (!empty($items)): ?>\n                            <?php foreach ($items as $item): ?>\n                                <tr>\n                                    <td><?= htmlspecialchars($item->id) ?></td>\n                                    <td><?= htmlspecialchars($item->item_name) ?></td>\n                                    <td><?= htmlspecialchars($item->quantity) ?></td>\n                                    <td><?= htmlspecialchars($item->category) ?></td>\n                                    <td><?= htmlspecialchars($item->location) ?></td>\n                                    <td><?= htmlspecialchars($item->status) ?></td>\n                                    <td><?= htmlspecialchars($item->barcode) ?></td>\n                                    <td>\n                                        <a href=\"?edit=<?= htmlspecialchars($item->id) ?>\" class=\"action-link\" onclick=\"return confirm('Are you sure you want to edit this item?');\">Edit</a> |\n                                        <a href=\"?delete=<?= htmlspecialchars($item->id) ?>\" class=\"action-link\" onclick=\"return confirm('Are you sure you want to delete this item?');\">Delete</a>\n                                    </td>\n                                </tr>\n                            <?php endforeach; ?>\n                        <?php else: ?>\n                            <tr><td colspan=\"8\" style=\"text-align:center;\">No items found.</td></tr>\n                        <?php endif; ?>\n                    </tbody>\n                </table>\n                <div style=\"text-align: center; margin-top: 1rem;\">\n                    <a href=\"?add=true\" class=\"add-button\">Add New Item</a>\n                </div>\n                <?php\n            }\n            ?>\n        </div>\n    </div>\n</body>\n</html>\n"}

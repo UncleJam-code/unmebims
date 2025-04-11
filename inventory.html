@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNMEB Inventory Management System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>UNMEB</h2>
+        <ul>
+            <!-- Dashboard -->
+            <li><a href="adminindex.html"><i class="fas fa-home"></i> Dashboard</a></li>
+            <!-- Inventory Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-boxes"></i> Inventory <i class="fas fa-caret-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="inventory.php">View Inventory</a></li>
+                    <li><a href="addinventory.php">Add New Item</a></li>
+                    <li><a href="editinventory.php">Edit Item</a></li>
+                    <li><a href="deleteinventory.php">Delete Item</a></li>
+                </ul>
+            </li>
+            <!-- Requests Dropdown -->
+            <li class="dropdown active">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-file-alt"></i> Requests <i class="fas fa-caret-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="make_request.php">Request Items</a></li>
+                    <li><a href="approve.php">Approve Requests</a></li>
+                    <li><a href="trackequipment.php">Track Equipment</a></li>
+                </ul>
+            </li>
+            <!-- Reports Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Reports <i class="fas fa-caret-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="report.php">Inventory Reports</a></li>
+                    <li><a href="audit_logs.php">Audit Logs</a></li>
+                </ul>
+            </li>
+            <!-- User Management Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-users"></i> Users <i class="fas fa-caret-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="addusers.php">Add New User</a></li>
+                    <li><a href="manageuser.php">Edit User Information</a></li>
+                </ul>
+            </li>
+            <!-- Logout -->
+            <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+    
+    <!-- Dropdown Toggle Script -->
+    <script>
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', event => {
+                event.preventDefault();
+                const parent = item.parentElement;
+                parent.classList.toggle('active');
+            });
+        });
+    </script>
+    
+    <header>
+        <h1>UNMEB Inventory Management</h1>
+        <nav>
+            <ul>
+                <li><a href="inventory.html">Home</a></li>
+                <li><a href="logout.php">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+
+    <div class="inventory-container">
+        <h2>Inventory Management</h2>
+
+        <!-- Form to Add New Inventory Item -->
+        <div class="form-container">
+            <h3>Add New Inventory Item</h3>
+            <form id="inventoryForm" action="add_inventory.php" method="POST">
+                <label for="item_name">Item Name:</label>
+                <input type="text" id="item_name" name="item_name" placeholder="Enter Item Name" required>
+
+                <label for="quantity">Quantity:</label>
+                <input type="number" id="quantity" name="quantity" placeholder="Enter Quantity" required>
+
+                <label for="location">Location:</label>
+                <input type="text" id="location" name="location" placeholder="Enter Location" required>
+
+                <label for="status">Status:</label>
+                <select name="status" id="status" required>
+                    <option value="Available">Available</option>
+                    <option value="In Use">In Use</option>
+                    <option value="Expired">Expired</option>
+                </select>
+
+                <label for="barcode">Barcode:</label>
+                <input type="text" id="barcode" name="barcode" placeholder="Enter Barcode" required>
+
+                <button type="submit" name="add_item">Add Item</button>
+            </form>
+        </div>
+
+        <!-- Display Current Inventory -->
+        <h3>Current Inventory</h3>
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Quantity</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Inventory items will be listed here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
