@@ -1,55 +1,53 @@
 <?php
-// sidebar.php
+// Load the XML file
+$xml = simplexml_load_file('sidebar.xml');
+if ($xml === false) {
+    die("Error: Cannot load XML file");
+}
 ?>
+
 <div class="sidebar">
-    <h2>UNMEB</h2>
+    <h2><?= htmlspecialchars((string)$xml->header->title) ?></h2>
     <ul>
-            <!-- Dashboard -->
-            <li><a href="adminindex.html"><i class="fas fa-home"></i> Dashboard</a></li>
-            <!-- Inventory Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle"><i class="fas fa-boxes"></i> Inventory <i class="fas fa-caret-down"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="inventory.php">View Inventory</a></li>
-                    <li><a href="addinventory.php">Add New Item</a></li>
-                </ul>
-            </li>
-            <!-- Requests Dropdown -->
-            <li class="dropdown active">
-                <a href="#" class="dropdown-toggle"><i class="fas fa-file-alt"></i> Requests <i class="fas fa-caret-down"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="make_request.php">Request Items</a></li>
-                    <li><a href="approve.php">Approve Requests</a></li>
-                </ul>
-            </li>
-            <!-- Reports Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Reports <i class="fas fa-caret-down"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="report.php">Inventory Reports</a></li>
-                    <li><a href="audit_logs.php">Audit Logs</a></li>
-                </ul>
-            </li>
-            <!-- User Management Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle"><i class="fas fa-users"></i> Users <i class="fas fa-caret-down"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="addusers.php">Add New User</a></li>
-                    <li><a href="manageuser.php">Edit User Information</a></li>
-                </ul>
-            </li>
-            <!-- Logout -->
-            <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
+        <?php foreach ($xml->navigation->children() as $element): ?>
+            <?php if ($element->getName() === 'item'): ?>
+                <!-- Render single navigation item -->
+                <li>
+                    <a href="<?= htmlspecialchars((string)$element->link) ?>">
+                        <i class="<?= htmlspecialchars((string)$element->icon) ?>"></i>
+                        <?= htmlspecialchars((string)$element->label) ?>
+                    </a>
+                </li>
+            <?php elseif ($element->getName() === 'dropdown'): ?>
+                <!-- Render dropdown menu -->
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" onclick="event.preventDefault();">
+                        <i class="<?= htmlspecialchars((string)$element->icon) ?>"></i>
+                        <?= htmlspecialchars((string)$element->label) ?> <i class="fas fa-caret-down"></i>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <?php foreach ($element->items->item as $subItem): ?>
+                            <li>
+                                <a href="<?= htmlspecialchars((string)$subItem->link) ?>">
+                                    <?= htmlspecialchars((string)$subItem->label) ?>
+                                </a>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </li>
+            <?php endif; ?>
+        <?php endforeach; ?>
+    </ul>
 </div>
 
+<!-- Dropdown Toggle Script -->
 <script>
-    // JavaScript for dropdown toggle functionality
-    document.querySelectorAll('.dropdown-toggle').forEach(item => {
-        item.addEventListener('click', event => {
-            event.preventDefault(); // Prevent default link behavior
-            const parent = item.parentElement; // Get the parent dropdown element
-            parent.classList.toggle('active'); // Toggle the 'active' class
-        });
+document.querySelectorAll('.dropdown-toggle').forEach(item => {
+    item.addEventListener('click', event => {
+        // Prevent the default behavior of the link
+        event.preventDefault();
+        const parent = item.parentElement;
+        parent.classList.toggle('active'); // Toggle the active class for dropdown menus
     });
+});
 </script>

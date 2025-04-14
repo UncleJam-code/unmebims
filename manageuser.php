@@ -13,25 +13,29 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Initialize variables
+$error_message = '';
+$success_message = '';
+
 // Handle user deletion
 if (isset($_GET['delete']) && filter_var($_GET['delete'], FILTER_VALIDATE_INT)) {
     $user_id = intval($_GET['delete']);
     $stmt = $conn->prepare("DELETE FROM users WHERE user_id = ?");
     $stmt->bind_param("i", $user_id);
+
     if ($stmt->execute()) {
-        $_SESSION['success_message'] = "user deleted successfully.";
+        $_SESSION['success_message'] = "User deleted successfully.";
         header("Location: manageuser.php");
         exit();
     } else {
-        echo "<p style='color: red;'>Error deleting user: " . htmlspecialchars($stmt->error) . "</p>";
+        $error_message = "Error deleting user: " . htmlspecialchars($stmt->error);
     }
     $stmt->close();
 }
 
 // Handle editing or adding users
 $edit_mode = false;
-$user_id = null;
-$full_name = $usename = $password = $role = $department = $email = "";
+$user_id = $full_name = $username = $password = $role = $department = $email = "";
 
 if (isset($_GET['edit']) && filter_var($_GET['edit'], FILTER_VALIDATE_INT)) {
     $user_id = intval($_GET['edit']);
@@ -57,43 +61,52 @@ if (isset($_GET['edit']) && filter_var($_GET['edit'], FILTER_VALIDATE_INT)) {
 
 // Handle form submission for adding/editing users
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Retrieve and sanitize input
     $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : null;
     $full_name = trim($_POST['full_name']);
-    $username = filter_var($_POST['name'], FILTER_VALIDATE_INT);
+    $username = trim($_POST['username']);
     $password = trim($_POST['password']);
     $role = trim($_POST['role']);
     $department = trim($_POST['department']);
-    $email = trim($_POST['email']);
+    $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
 
     // Validate inputs
-    if (empty($full_name) || ($username) ||empty($password) || empty($role) || empty($department) || empty($email)) {
-        echo "<p style='color: red;'>All fields are required.</p>";
-    }  else {
+    if (empty($full_name) || empty($username) || empty($password) || empty($role) || empty($department) || empty($email)) {
+        $error_message = "All fields are required.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error_message = "Invalid email format.";
+    } else {
+        // Hash the password for security
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
         if ($edit_mode) {
             // Update existing user
-            $update_sql = "UPDATE users SET full_name=?, username=?, password=?, role=?, department=?, email=? WHERE user_id=?";
+            $update_sql = "UPDATE users 
+                           SET full_name=?, username=?, password=?, role=?, department=?, email=? 
+                           WHERE user_id=?";
             $stmt = $conn->prepare($update_sql);
-            $stmt->bind_param("sissssi", $full_name, $username, $password, $role, $department, $email);
+            $stmt->bind_param("ssssssi", $full_name, $username, $hashed_password, $role, $department, $email, $user_id);
 
             if ($stmt->execute()) {
                 $_SESSION['success_message'] = "User updated successfully.";
                 header("Location: manageuser.php");
                 exit();
             } else {
-                echo "<p style='color: red;'>Error updating user: " . htmlspecialchars($stmt->error) . "</p>";
+                $error_message = "Error updating user: " . htmlspecialchars($stmt->error);
             }
         } else {
             // Add new user
-            $insert_sql = "INSERT INTO users (full_name, username, password, role, department, email) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $insert_sql = "INSERT INTO users (full_name, username, password, role, department, email) 
+                           VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($insert_sql);
-            $stmt->bind_param("sissss", $full_name, $username, $password, $role, $deapartment, $email);
+            $stmt->bind_param("ssssss", $full_name, $username, $hashed_password, $role, $department, $email);
 
             if ($stmt->execute()) {
-                $_SESSION['success_message'] = "USer added successfully.";
+                $_SESSION['success_message'] = "User added successfully.";
                 header("Location: manageuser.php");
                 exit();
             } else {
-                echo "<p style='color: red;'>Error adding user: " . htmlspecialchars($stmt->error) . "</p>";
+                $error_message = "Error adding user: " . htmlspecialchars($stmt->error);
             }
         }
         $stmt->close();
@@ -248,59 +261,69 @@ $conn->close();
 
     <!-- Main Content -->
     <div class="main-content">
-        <div class="container">
-            <?php if (isset($_GET['add']) || $edit_mode): ?>
-                <h2><?= $edit_mode ? "Edit User" : "Add New User" ?></h2>
-                <form method="POST" action="">
-                    <?php if ($edit_mode): ?>
-                        <input type="hidden" name="user_id" value="<?= $user_id ?>">
-                    <?php endif; ?>
+    <div class="container">
+        <?php if (!empty($error_message)): ?>
+            <p class="error-message"><?= htmlspecialchars($error_message) ?></p>
+        <?php endif; ?>
+        <?php if (!empty($success_message)): ?>
+            <p class="success-message"><?= htmlspecialchars($success_message) ?></p>
+        <?php endif; ?>
 
+        <?php if (isset($_GET['add']) || $edit_mode): ?>
+            <h2><?= $edit_mode ? "Edit User" : "Add New User" ?></h2>
+            <form method="POST" action="">
+                <?php if ($edit_mode): ?>
+                    <input type="hidden" name="user_id" value="<?= $user_id ?>">
+                <?php endif; ?>
+                <div class="form-group">
                     <label for="full_name">Full Name:</label>
-                    <input type="text" id="ull_name" name="ull_name" value="<?= $full_name ?>" required>
-
+                    <input type="text" id="full_name" name="full_name" value="<?= $full_name ?>" required>
+                </div>
+                <div class="form-group">
                     <label for="username">Username:</label>
                     <input type="text" id="username" name="username" value="<?= $username ?>" required>
-
+                </div>
+                <div class="form-group">
                     <label for="password">Password:</label>
                     <input type="password" id="password" name="password" value="<?= $password ?>" required>
-
-                    <div class="form-group">
+                </div>
+                <div class="form-group">
                     <label for="role">Role:</label>
-                        <select id="role" name="role" required>
-                            <option value="Admin">Admin</option>
-                            <option value="Manager">Manager</option>
-                            <option value="Staff">Staff</option>
-                        </select>
-                    </div>
-                    
-                    <label for="department">Deparment:</label>
+                    <select id="role" name="role" required>
+                <option value="Admin" <?= isset($role) && $role === 'Admin' ? 'selected' : '' ?>>Admin</option>
+                <option value="Inventory Manager" <?= isset($role) && $role === 'inventory Manager' ? 'selected' : '' ?>>Inventory Manager</option>
+                <option value="User" <?= isset($role) && $role === 'User' ? 'selected' : '' ?>>Staff</option>
+            </select>
+                </div>
+                <div class="form-group">
+                    <label for="department">Department:</label>
                     <input type="text" id="department" name="department" value="<?= $department ?>" required>
-                    
+                </div>
+                <div class="form-group">
                     <label for="email">Email:</label>
-                    <input type="text" id="email" name="email" value="<?= $email ?>" required>
-
-                    <div class="btn-container">
-                        <button type="submit"><?= $edit_mode ? "Update User" : "Add User" ?></button>
-                        <a href="manageuser.php"><button type="button">Cancel</button></a>
-                    </div>
-                </form>
-            <?php else: ?>
-                <h2>Management Users</h2>
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Full Name</th>
-                            <th>User Names</th>
-                            <th>Role</th>
-                            <th>Department</th>
-                            <th>Email</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php while ($row = $result->fetch_assoc()): ?>
+                    <input type="email" id="email" name="email" value="<?= $email ?>" required>
+                </div>
+                <div class="btn-container">
+                    <button type="submit"><?= $edit_mode ? "Update User" : "Add User" ?></button>
+                    <a href="manageuser.php"><button type="button">Cancel</button></a>
+                </div>
+            </form>
+        <?php else: ?>
+            <h2>Manage Users</h2>
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Full Name</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Department</th>
+                        <th>Email</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = $result->fetch_assoc()): ?>
                         <tr>
                             <td><?= htmlspecialchars($row['user_id']) ?></td>
                             <td><?= htmlspecialchars($row['full_name']) ?></td>
@@ -309,27 +332,14 @@ $conn->close();
                             <td><?= htmlspecialchars($row['department']) ?></td>
                             <td><?= htmlspecialchars($row['email']) ?></td>
                             <td>
-                                <a href="?edit=<?= $row['user_id'] ?>" 
-                                   class="action-link"
-                                   onclick="return confirm('Are you sure you want to edit this user?');">
-                                   Edit
-                                </a>
-                                |
-                                <a href="?delete=<?= $row['user_id'] ?>" 
-                                   class="action-link"
-                                   onclick="return confirm('Are you sure you want to delete this user?');">
-                                   Delete
-                                </a>
+                                <a href="?edit=<?= $row['user_id'] ?>" class="action-link" onclick="return confirm('Are you sure you want to edit this user?');">Edit</a> |
+                                <a href="?delete=<?= $row['user_id'] ?>" class="action-link" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
                             </td>
                         </tr>
-                        <?php endwhile; ?>
-                    </tbody>
-                </table>
-                <div style="text-align: center;">
-                    <a href="?add=true" class="add-button">Add New User</a>
-                </div>
-            <?php endif; ?>
-        </div>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
     </div>
 </body>
 </html>

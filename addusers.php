@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Check if the user is logged in
+// Redirect to login if user is not logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
@@ -15,36 +15,48 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Initialize variables
+$error = '';
+$success = '';
+
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $full_name = htmlspecialchars(trim($_POST['full_name']));
-    $username = htmlspecialchars(trim($_POST['username']));
+    // Retrieve and sanitize input
+    $full_name = trim($_POST['full_name']);
+    $username = trim($_POST['username']);
     $password = $_POST['password'];
-    $role = htmlspecialchars($_POST['role']);
-    $department = htmlspecialchars($_POST['department']);
+    $role = trim($_POST['role']);
+    $department = trim($_POST['department']);
     $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
 
     // Validate input
-    if (empty($full_name) || empty($username) || empty($password) || empty($role) ||empty($departmetn) ||empty($email)) {
+    if (empty($full_name) || empty($username) || empty($password) || empty($role) || empty($department) || empty($email)) {
         $error = "All fields are required.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Invalid email format.";
     } else {
         // Hash the password for security
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // Insert user into database using prepared statement
+        // Insert user into the database using prepared statement
         $stmt = $conn->prepare("INSERT INTO users (full_name, username, password, role, department, email) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param( $full_name, $username, $hashed_password, $role, $department, $email);
-
-        if ($stmt->execute()) {
-            header("Location: manageuser.php?success=User added successfully");
-            exit();
+        if (!$stmt) {
+            $error = "Error preparing the SQL statement: " . $conn->error;
         } else {
-            $error = "Error adding user: " . $conn->error;
+            $stmt->bind_param("ssssss", $full_name, $username, $hashed_password, $role, $department, $email);
+
+            if ($stmt->execute()) {
+                $success = "User added successfully.";
+                // Clear form fields after successful submission
+                $full_name = $username = $password = $role = $department = $email = '';
+            } else {
+                $error = "Error adding user: " . $stmt->error;
+            }
+
+            $stmt->close();
         }
-        $stmt->close();
     }
 }
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -171,6 +183,7 @@ $conn->close();
 </head>
 <body>
 <?php include 'sidebar.php'; ?>
+
     <div class="container">
         <h2>Add New User</h2>
         <?php if (!empty($error)) echo "<p style='color: red;'>$error</p>"; ?>
@@ -191,10 +204,10 @@ $conn->close();
             <div class="form-group">
                 <label for="role">Role:</label>
                 <select id="role" name="role" required>
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Staff">Staff</option>
-                </select>
+                <option value="Admin" <?= isset($role) && $role === 'Admin' ? 'selected' : '' ?>>Admin</option>
+                <option value="Inventory Manager" <?= isset($role) && $role === 'inventory Manager' ? 'selected' : '' ?>>Inventory Manager</option>
+                <option value="User" <?= isset($role) && $role === 'User' ? 'selected' : '' ?>>Staff</option>
+            </select>
             </div>
             <div class="form-group">
                 <label for="department">Department:</label>

@@ -29,27 +29,69 @@ if ($report_type && $start_date && $end_date) {
     // Fetch data based on report type
     switch ($report_type) {
         case 'requested':
-            $query = "SELECT r.request_id, u.full_name, i.item_name, r.quantity, r.purpose, r.status, r.created_at 
-                        FROM requests r
-                        JOIN users u ON r.user_id = u.user_id
-                        JOIN inventory i ON r.item_id = i.item_id
-                        WHERE r.created_at BETWEEN '$start_date' AND '$last_updated'";
-
+            $query = "
+                SELECT 
+                    r.request_id, 
+                    u.full_name, 
+                    i.item_name, 
+                    r.quantity, 
+                    r.purpose, 
+                    r.status, 
+                    r.created_at 
+                FROM 
+                    requests r
+                JOIN 
+                    users u ON r.user_id = u.user_id
+                JOIN 
+                    inventory i ON r.item_id = i.item_id
+                WHERE 
+                    r.created_at BETWEEN '$start_date' AND '$end_date'
+            ";
             break;
 
         case 'added':
-            $query = "SELECT * FROM inventory 
-                      WHERE created_at BETWEEN '$start_date' AND '$end_date'";
+            $query = "
+                SELECT 
+                    item_id, 
+                    item_name, 
+                    quantity, 
+                    category, 
+                    location, 
+                    created_at 
+                FROM 
+                    inventory 
+                WHERE 
+                    created_at BETWEEN '$start_date' AND '$end_date'
+            ";
             break;
 
         case 'deleted':
-            $query = "SELECT * FROM audit_logs 
-                      WHERE action = 'Deleted Item' AND timestamp BETWEEN '$start_date' AND '$end_date'";
+            $query = "
+                SELECT 
+                    log_id AS id, 
+                    action, 
+                    details, 
+                    timestamp 
+                FROM 
+                    audit_logs 
+                WHERE 
+                    action = 'Deleted Item' 
+                    AND timestamp BETWEEN '$start_date' AND '$end_date'
+            ";
             break;
 
         case 'inventory_levels':
-            $query = "SELECT item_name, quantity, category, location, status, last_updated 
-                      FROM inventory";
+            $query = "
+                SELECT 
+                    item_name, 
+                    quantity, 
+                    category, 
+                    location, 
+                    status, 
+                    last_updated 
+                FROM 
+                    inventory
+            ";
             break;
 
         default:
@@ -57,13 +99,15 @@ if ($report_type && $start_date && $end_date) {
             break;
     }
 
-    $result = $conn->query($query);
-    if ($result->num_rows > 0) {
-        while ($row = $result->fetch_assoc()) {
-            $inventory_data[] = $row;
+    if ($query) {
+        $result = $conn->query($query);
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $inventory_data[] = $row;
+            }
+        } else {
+            $inventory_data = [];
         }
-    } else {
-        $inventory_data = [];
     }
 }
 ?>
@@ -75,7 +119,7 @@ if ($report_type && $start_date && $end_date) {
     <title>Inventory Reports</title>
     <!-- External CSS and Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!--  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
     <style>
         /* Root Variables */
         :root {
@@ -210,73 +254,21 @@ if ($report_type && $start_date && $end_date) {
     </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <h2>UNMEB</h2>
-        <ul>
-            <!-- Dashboard -->
-            <li><a href="adminindex.html"><i class="fas fa-home"></i> Dashboard</a></li>
-            <!-- Inventory Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle"><i class="fas fa-boxes"></i> Inventory <i class="fas fa-caret-down"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="inventory.php">View Inventory</a></li>
-                    <li><a href="addinventory.php">Add New Item</a></li>
-                </ul>
-            </li>
-            <!-- Requests Dropdown -->
-            <li class="dropdown active">
-                <a href="#" class="dropdown-toggle"><i class="fas fa-file-alt"></i> Requests <i class="fas fa-caret-down"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="make_request.php">Request Items</a></li>
-                    <li><a href="approve.php">Approve Requests</a></li>
-                    <li><a href="trackequipment.php">Track Equipment</a></li>
-                </ul>
-            </li>
-            <!-- Reports Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle"><i class="fas fa-chart-bar"></i> Reports <i class="fas fa-caret-down"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="report.php">Inventory Reports</a></li>
-                    <li><a href="audit_logs.php">Audit Logs</a></li>
-                </ul>
-            </li>
-            <!-- User Management Dropdown -->
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle"><i class="fas fa-users"></i> Users <i class="fas fa-caret-down"></i></a>
-                <ul class="dropdown-menu">
-                    <li><a href="addusers.php">Add New User</a></li>
-                    <li><a href="manageuser.php">Edit User Information</a></li>
-                </ul>
-            </li>
-            <!-- Logout -->
-            <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-    </div>
+<?php include 'sidebar.php'; ?>
     
-    <!-- Dropdown Toggle Script -->
-    <script>
-        document.querySelectorAll('.dropdown-toggle').forEach(item => {
-            item.addEventListener('click', event => {
-                event.preventDefault();
-                const parent = item.parentElement;
-                parent.classList.toggle('active');
-            });
-        });
-</script>
     <!-- Main Content -->
     <div class="main-content">
         <div class="container">
             <h2>Generate Report</h2>
             <form method="GET" action="">
-                <label for="report_type">Report Type:</label>
-                <select id="report_type" name="report_type" required>
-                    <option value="">-- Select Report Type --</option>
-                    <option value="requested" <?= $report_type === 'requested' ? 'selected' : '' ?>>Requested Items</option>
-                    <option value="added" <?= $report_type === 'added' ? 'selected' : '' ?>>Added Items</option>
-                    <option value="deleted" <?= $report_type === 'deleted' ? 'selected' : '' ?>>Deleted Items</option>
-                    <option value="inventory_levels" <?= $report_type === 'inventory_levels' ? 'selected' : '' ?>>Inventory Levels</option>
-                </select>
+            <label for="report_type">Report Type:</label>
+            <select id="report_type" name="report_type" required>
+                <option value="">-- Select Report Type --</option>
+                <option value="requested" <?= $report_type === 'requested' ? 'selected' : '' ?>>Requested Items</option>
+                <option value="added" <?= $report_type === 'added' ? 'selected' : '' ?>>Added Items</option>
+                <option value="deleted" <?= $report_type === 'deleted' ? 'selected' : '' ?>>Deleted Items</option>
+                <option value="inventory_levels" <?= $report_type === 'inventory_levels' ? 'selected' : '' ?>>Inventory Levels</option>
+            </select>
 
                 <label for="start_date">Start Date:</label>
                 <input type="date" id="start_date" name="start_date" value="<?= htmlspecialchars($start_date) ?>" required>

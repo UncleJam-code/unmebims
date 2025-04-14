@@ -199,7 +199,53 @@ $conn->close();
 
 <body>
 
-<?php include 'sidebar.php'; ?>
+<!-- Sidebar -->
+<div class="sidebar">
+        <h2>UNMEB</h2>
+        <ul>
+            <!-- Dashboard -->
+            <li><a href="indexu.php"><i class="fas fa-home"></i> Dashboard</a></li>
+            <!-- Inventory Dropdown -->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-boxes"></i> Inventory <i class="fas fa-caret-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="inventoryu.php">View Inventory</a></li>
+                </ul>
+            </li>
+            <!-- Requests Dropdown -->
+            <li class="dropdown active">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-file-alt"></i> Requests <i class="fas fa-caret-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="make_requestu.php">Request Items</a></li>
+                    <li><a href="approved.php">Approve Requests</a></li>
+                    
+                </ul>
+            </li>
+            
+            <!-- Analytics Dropdown -->
+            <li class="dropdown active">
+                <a href="#" class="dropdown-toggle"><i class="fas fa-file-line"></i> Analytics <i class="fas fa-caret-down"></i></a>
+                <ul class="dropdown-menu">
+                    <li><a href="graphu.php">View Graphs</a></li>
+                    
+                </ul>
+            </li>
+           
+            <!-- Logout -->
+            <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </div>
+
+    <!-- Dropdown Toggle Script -->
+    <script>
+        document.querySelectorAll('.dropdown-toggle').forEach(item => {
+            item.addEventListener('click', event => {
+                event.preventDefault();
+                const parent = item.parentElement;
+                parent.classList.toggle('active');
+            });
+        });
+    </script>
 
     <!-- Main Content -->
     <div class="main-content">

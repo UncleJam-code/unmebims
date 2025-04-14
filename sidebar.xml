@@ -1,0 +1,100 @@
+<sidebar>
+    <header>
+        <title>UNMEB</title>
+    </header>
+    <navigation>
+        <!-- Dashboard -->
+        <item>
+            <label>Dashboard</label>
+            <icon>fas fa-home</icon>
+            <link>index.php</link>
+        </item>
+
+        <!-- Inventory Dropdown -->
+        <dropdown>
+            <label>Inventory</label>
+            <icon>fas fa-boxes</icon>
+            <items>
+                <item>
+                    <label>View Inventory</label>
+                    <link>inventory.php</link>
+                </item>
+                <item>
+                    <label>Add New Item</label>
+                    <link>addinventory.php</link>
+                </item>
+            </items>
+        </dropdown>
+
+        <!-- Requests Dropdown -->
+        <dropdown>
+            <label>Requests</label>
+            <icon>fas fa-file-alt</icon>
+            <items>
+                <item>
+                    <label>Request Items</label>
+                    <link>make_request.php</link>
+                </item>
+                <item>
+                    <label>Approve Requests</label>
+                    <link>approve.php</link>
+                </item>
+            </items>
+        </dropdown>
+
+        <!-- Reports -->
+        <dropdown>
+            <label>Reports</label>
+            <icon>fas fa-file-alt</icon>
+            <items>
+                <item>
+                    <label>Inventory Reports</label>
+                    <link>report.php</link>
+                </item>
+                <item>
+                    <label>Audit Logs</label>
+                    <link>audit_logs.php</link>
+                </item>
+            </items>
+        </dropdown>
+
+        <!-- Analytics -->
+        <dropdown>
+            <label>Analytics</label>
+            <icon>fas fa-chart-line</icon>
+            <items>
+                <item>
+                    <label>View Graphs</label>
+                    <link>graph.php</link>
+                </item>
+                <item>
+                    <label>Generate Insights</label>
+                    <link>insights.php</link>
+                </item>
+            </items>
+        </dropdown>
+
+        <!-- Users -->
+        <dropdown>
+            <label>Users</label>
+            <icon>fas fa-users</icon>
+            <items>
+                <item>
+                    <label>Add New User</label>
+                    <link>addusers.php</link>
+                </item>
+                <item>
+                    <label>Edit User</label>
+                    <link>manageuser.php</link>
+                </item>
+            </items>
+        </dropdown>
+
+        <!-- Logout -->
+        <item>
+            <label>Logout</label>
+            <icon>fas fa-sign-out-alt</icon>
+            <link>logout.php</link>
+        </item>
+    </navigation>
+</sidebar>

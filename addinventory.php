@@ -206,12 +206,29 @@ if (isset($_POST['add_item'])) {
                         <option value="Expired">Expired</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
-                    <label>Barcode</label>
-                    <input type="text" name="barcode" required>
+                <label>Barcode</label>
+                <div style="display: flex; align-items: center;">
+                    <input 
+                        type="text" 
+                        id="barcode" 
+                        name="barcode" 
+                        placeholder="Scan barcode or enter manually" 
+                        required 
+                        readonly 
+                        style="flex-grow: 1; margin-right: 10px;" 
+                    >
+                    <button 
+                        type="button" 
+                        id="scan-barcode-btn" 
+                        style="padding: 0.5rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                    >
+                        Scan Barcode
+                    </button>
                 </div>
-                
+            </div>
+
                 <button type="submit" name="add_item" class="submit-btn">Add Item</button>
             </form>
         </div>
@@ -303,6 +320,92 @@ if (isset($_POST['add_item'])) {
             });
         });
     </script>
+                     Include QuaggaJS 
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+                <script>
+                    // Function to initialize barcode scanner
+                    function startBarcodeScanner() {
+                        // Create a container for the camera feed
+                        const scannerContainer = document.createElement('div');
+                        scannerContainer.style.position = 'fixed';
+                        scannerContainer.style.top = '0';
+                        scannerContainer.style.left = '0';
+                        scannerContainer.style.width = '100%';
+                        scannerContainer.style.height = '100%';
+                        scannerContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+                        scannerContainer.style.zIndex = '1000';
+                        scannerContainer.style.display = 'flex';
+                        scannerContainer.style.justifyContent = 'center';
+                        scannerContainer.style.alignItems = 'center';
+
+                        // Add the camera feed element
+                        const cameraFeed = document.createElement('div');
+                        cameraFeed.style.width = '300px';
+                        cameraFeed.style.height = '250px';
+                        cameraFeed.style.border = '2px solid white';
+                        cameraFeed.style.overflow = 'hidden';
+                        scannerContainer.appendChild(cameraFeed);
+
+                        // Add a close button
+                        const closeButton = document.createElement('button');
+                        closeButton.innerText = 'Close Scanner';
+                        closeButton.style.position = 'absolute';
+                        closeButton.style.top = '20px';
+                        closeButton.style.right = '20px';
+                        closeButton.style.padding = '0.5rem 1rem';
+                        closeButton.style.background = '#e74c3c';
+                        closeButton.style.color = 'white';
+                        closeButton.style.border = 'none';
+                        closeButton.style.borderRadius = '4px';
+                        closeButton.style.cursor = 'pointer';
+                        closeButton.onclick = () => {
+                            Quagga.stop();
+                            document.body.removeChild(scannerContainer);
+                        };
+                        scannerContainer.appendChild(closeButton);
+
+                        // Append the scanner container to the body
+                        document.body.appendChild(scannerContainer);
+
+                        // Initialize QuaggaJS
+                        Quagga.init({
+                            inputStream: {
+                                name: "Live",
+                                type: "LiveStream",
+                                target: cameraFeed,
+                                constraints: {
+                                    width: 300,
+                                    height: 250,
+                                    facingMode: "environment" // Use the rear camera
+                                }
+                            },
+                            decoder: {
+                                readers: ["code_128_reader", "ean_reader", "upc_reader"] // Supported barcode formats
+                            }
+                        }, function(err) {
+                            if (err) {
+                                console.error("Error initializing Quagga:", err);
+                                alert("Failed to initialize barcode scanner. Please try again.");
+                                document.body.removeChild(scannerContainer);
+                                return;
+                            }
+                            console.log("Quagga initialized successfully.");
+                            Quagga.start(); // Start the camera stream
+                        });
+
+                        // Listen for detected barcodes
+                        Quagga.onDetected(function(result) {
+                            const barcode = result.codeResult.code; // Extract the barcode value
+                            document.getElementById("barcode").value = barcode; // Populate the input field
+                            Quagga.stop(); // Stop scanning after detecting a barcode
+                            document.body.removeChild(scannerContainer); // Remove the scanner container
+                        });
+                    }
+
+                    // Attach the scanner function to the button
+                    document.getElementById("scan-barcode-btn").addEventListener("click", startBarcodeScanner);
+                </script>
 </body>
 </html>
 

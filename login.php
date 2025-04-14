@@ -40,11 +40,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // Redirect based on role
                 switch ($user['role']) {
                     case 'Admin':
-                        header("Location: adminindex.html");
+                        header("Location: index.php");
                         break;
                     case 'User':
-                        header("Location: userindex.html");
+                        header("Location: indexu.php");
                         break;
+                    case 'Inventory Manager':
+                            header("Location: indexi.php");
+                            break;
                     default:
                         header("Location: dashboard.php");
                 }
@@ -69,8 +72,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>UNMEB Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="flex items-center justify-center min-h-screen bg-gray-100">
-    <div class="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+<div class="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
+        <!-- Welcome Remarks -->
+        <div class="mb-6 text-center">
+            <h1 class="text-3xl font-bold text-blue-700">Welcome to UNMEB</h1>
+            <p class="mt-2 text-gray-600">Uganda Nurses and Midwives Examinations Board (UNMEB) Inventory Management System</p>
+        </div>
+
+        <!-- Display error message if any -->
+        <?php if (!empty($error)): ?>
+            <p class="text-red-500 text-center mt-4"><?= htmlspecialchars($error) ?></p>
+        <?php endif; ?>    
+<div class="w-full max-w-md p-6 bg-white rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold text-center text-gray-800">UNMEB Login</h2>
 
         <!-- Display error message if any -->

@@ -191,6 +191,7 @@ $conn->close();
 </head>
 <body>
 <?php include 'sidebar.php'; ?>
+
     <div class="container">
         <h2>Edit Inventory Item</h2>
 
